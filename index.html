@@ -12,7 +12,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            cursor: pointer; /* 클릭 유도를 위해 커서 변경 */
+            cursor: pointer;
         }
 
         .background-img {
@@ -35,31 +35,28 @@
             pointer-events: none;
         }
 
-        /* 클릭 안내 문구 */
         #guide-text {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             z-index: 10;
-            background: rgba(0,0,0,0.5);
-            padding: 15px 30px;
-            border-radius: 50px;
+            background: rgba(0,0,0,0.6);
+            padding: 12px 24px;
+            border-radius: 30px;
             pointer-events: none;
             transition: opacity 0.5s;
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body onclick="toggleFullScreen()">
 
-    <div id="guide-text">화면을 클릭하여 전체화면으로 보기</div>
+    <div id="guide-text">화면을 클릭하여 시작 (전체화면)</div>
 
-    <img src="https://i.imgur.com/lz2s0ae.png" 
-         alt="배경 이미지" 
-         class="background-img">
-
+    <img src="https://i.imgur.com/lz2s0ae.png" alt="배경 이미지" class="background-img">
     <canvas id="confetti-canvas"></canvas>
 
     <script>
@@ -76,12 +73,9 @@
             canvas.height = window.innerHeight;
         }
 
-        // 전체화면 전환 함수
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`Error: ${err.message}`);
-                });
+                document.documentElement.requestFullscreen().catch(() => {});
                 guide.style.opacity = '0';
                 if (!isStarted) {
                     setup();
@@ -99,21 +93,34 @@
             init(side) {
                 this.side = side || (Math.random() > 0.5 ? 'left' : 'right');
                 this.color = colors[Math.floor(Math.random() * colors.length)];
-                this.diameter = Math.random() * 8 + 4;
+                this.size = Math.random() * 8 + 8; // 하트 크기를 조금 더 키움
                 this.rotation = Math.random() * 360;
-                this.rotationSpeed = Math.random() * 10 - 5;
+                this.rotationSpeed = Math.random() * 6 - 3; // 하트가 자연스럽게 돌게 함
+                
                 this.x = (this.side === 'left') ? 0 : canvas.width;
-                this.y = canvas.height * 1.1; 
+                this.y = canvas.height * 1.05; 
                 
                 const angle = (this.side === 'left') 
-                    ? (Math.random() * -60 - 15) 
-                    : (Math.random() * 60 + 195); 
+                    ? (Math.random() * -55 - 25) // 각도를 더 좁힘
+                    : (Math.random() * 55 + 205); // 각도를 더 좁힘
                 
-                const speed = Math.random() * 20 + 12;
+                const speed = Math.random() * 22 + 10; // 하트가 더 멀리 퍼지게 함
                 this.vx = Math.cos(angle * Math.PI / 180) * speed;
                 this.vy = Math.sin(angle * Math.PI / 180) * speed;
-                this.gravity = 0.2; 
+                this.gravity = 0.25; 
                 this.opacity = 1;
+            }
+
+            drawHeart(x, y, size) {
+                ctx.beginPath();
+                const topCurveHeight = size * 0.3;
+                ctx.moveTo(0, topCurveHeight);
+                // 하트 곡선 그리기
+                ctx.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, topCurveHeight);
+                ctx.bezierCurveTo(-size / 2, (size + topCurveHeight) / 2, 0, (size + topCurveHeight) / 2, 0, size);
+                ctx.bezierCurveTo(0, (size + topCurveHeight) / 2, size / 2, (size + topCurveHeight) / 2, size / 2, topCurveHeight);
+                ctx.bezierCurveTo(size / 2, 0, 0, 0, 0, topCurveHeight);
+                ctx.fill();
             }
 
             update() {
@@ -121,9 +128,9 @@
                 this.y += this.vy;
                 this.vy += this.gravity;
                 this.rotation += this.rotationSpeed;
-                this.opacity -= 0.005;
+                this.opacity -= 0.007; // 서서히 사라짐
 
-                if (this.opacity <= 0 || this.y > canvas.height + 100) {
+                if (this.opacity <= 0 || this.y > canvas.height + 50) {
                     this.init(this.side);
                 }
             }
@@ -134,7 +141,10 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.rotation * Math.PI / 180);
                 ctx.fillStyle = this.color;
-                ctx.fillRect(-this.diameter / 2, -this.diameter / 2, this.diameter, this.diameter);
+                
+                // 오직 하트만 그림
+                this.drawHeart(0, 0, this.size * 1.5);
+                
                 ctx.restore();
             }
         }
@@ -142,7 +152,8 @@
         function setup() {
             updateCanvasSize();
             pieces = [];
-            for (let i = 0; i < 150; i++) {
+            // 파티클 양을 각 방향당 100개씩 총 200개로 설정
+            for (let i = 0; i < 100; i++) {
                 pieces.push(new Confetti('left'));
                 pieces.push(new Confetti('right'));
             }
@@ -161,7 +172,6 @@
             updateCanvasSize();
             if(isStarted) setup();
         });
-
     </script>
 </body>
 </html>
